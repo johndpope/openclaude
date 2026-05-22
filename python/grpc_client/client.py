@@ -120,7 +120,7 @@ async def main():
     async with grpc.aio.insecure_channel(target) as channel:
         # Wait up to 5 s for the server to be reachable
         try:
-            await grpc.aio.channel_ready_future(channel)
+            await channel.channel_ready()
         except asyncio.TimeoutError:
             print(
                 f"\033[31mCould not reach gRPC server at {target} — "
