@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10openclaude.proto\x12\ropenclaude.v1\"\xa3\x01\n\rClientMessage\x12-\n\x07request\x18\x02 \x01(\x0b\x32\x1a.openclaude.v1.ChatRequestH\x00\x12)\n\x05input\x18\x03 \x01(\x0b\x32\x18.openclaude.v1.UserInputH\x00\x12-\n\x06\x63\x61ncel\x18\x04 \x01(\x0b\x32\x1b.openclaude.v1.CancelSignalH\x00\x42\t\n\x07payload\"q\n\x0b\x43hatRequest\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x19\n\x11working_directory\x18\x02 \x01(\t\x12\x12\n\x05model\x18\x04 \x01(\tH\x00\x88\x01\x01\x12\x12\n\nsession_id\x18\x05 \x01(\tB\x08\n\x06_modelJ\x04\x08\x03\x10\x04\"-\n\tUserInput\x12\r\n\x05reply\x18\x01 \x01(\t\x12\x11\n\tprompt_id\x18\x02 \x01(\t\"\x1e\n\x0c\x43\x61ncelSignal\x12\x0e\n\x06reason\x18\x01 \x01(\t\"\xc9\x02\n\rServerMessage\x12.\n\ntext_chunk\x18\x01 \x01(\x0b\x32\x18.openclaude.v1.TextChunkH\x00\x12\x32\n\ntool_start\x18\x02 \x01(\x0b\x32\x1c.openclaude.v1.ToolCallStartH\x00\x12\x34\n\x0btool_result\x18\x03 \x01(\x0b\x32\x1d.openclaude.v1.ToolCallResultH\x00\x12\x38\n\x0f\x61\x63tion_required\x18\x04 \x01(\x0b\x32\x1d.openclaude.v1.ActionRequiredH\x00\x12,\n\x04\x64one\x18\x05 \x01(\x0b\x32\x1c.openclaude.v1.FinalResponseH\x00\x12-\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x1c.openclaude.v1.ErrorResponseH\x00\x42\x07\n\x05\x65vent\"\x19\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\"O\n\rToolCallStart\x12\x11\n\ttool_name\x18\x01 \x01(\t\x12\x16\n\x0e\x61rguments_json\x18\x02 \x01(\t\x12\x13\n\x0btool_use_id\x18\x03 \x01(\t\"Z\n\x0eToolCallResult\x12\x11\n\ttool_name\x18\x01 \x01(\t\x12\x0e\n\x06output\x18\x02 \x01(\t\x12\x10\n\x08is_error\x18\x03 \x01(\x08\x12\x13\n\x0btool_use_id\x18\x04 \x01(\t\"\xa9\x01\n\x0e\x41\x63tionRequired\x12\x11\n\tprompt_id\x18\x01 \x01(\t\x12\x10\n\x08question\x18\x02 \x01(\t\x12\x36\n\x04type\x18\x03 \x01(\x0e\x32(.openclaude.v1.ActionRequired.ActionType\":\n\nActionType\x12\x13\n\x0f\x43ONFIRM_COMMAND\x10\x00\x12\x17\n\x13REQUEST_INFORMATION\x10\x01\"T\n\rFinalResponse\x12\x11\n\tfull_text\x18\x01 \x01(\t\x12\x15\n\rprompt_tokens\x18\x02 \x01(\x05\x12\x19\n\x11\x63ompletion_tokens\x18\x03 \x01(\x05\".\n\rErrorResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0c\n\x04\x63ode\x18\x02 \x01(\t2V\n\x0c\x41gentService\x12\x46\n\x04\x43hat\x12\x1c.openclaude.v1.ClientMessage\x1a\x1c.openclaude.v1.ServerMessage(\x01\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10openclaude.proto\x12\ropenclaude.v1\"\xa3\x01\n\rClientMessage\x12-\n\x07request\x18\x02 \x01(\x0b\x32\x1a.openclaude.v1.ChatRequestH\x00\x12)\n\x05input\x18\x03 \x01(\x0b\x32\x18.openclaude.v1.UserInputH\x00\x12-\n\x06\x63\x61ncel\x18\x04 \x01(\x0b\x32\x1b.openclaude.v1.CancelSignalH\x00\x42\t\n\x07payload\"\x8d\x01\n\x0b\x43hatRequest\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x19\n\x11working_directory\x18\x02 \x01(\t\x12\x12\n\x05model\x18\x04 \x01(\tH\x00\x88\x01\x01\x12\x12\n\nsession_id\x18\x05 \x01(\t\x12\x1a\n\x12\x62ypass_permissions\x18\x06 \x01(\x08\x42\x08\n\x06_modelJ\x04\x08\x03\x10\x04\"-\n\tUserInput\x12\r\n\x05reply\x18\x01 \x01(\t\x12\x11\n\tprompt_id\x18\x02 \x01(\t\"\x1e\n\x0c\x43\x61ncelSignal\x12\x0e\n\x06reason\x18\x01 \x01(\t\"\xc9\x02\n\rServerMessage\x12.\n\ntext_chunk\x18\x01 \x01(\x0b\x32\x18.openclaude.v1.TextChunkH\x00\x12\x32\n\ntool_start\x18\x02 \x01(\x0b\x32\x1c.openclaude.v1.ToolCallStartH\x00\x12\x34\n\x0btool_result\x18\x03 \x01(\x0b\x32\x1d.openclaude.v1.ToolCallResultH\x00\x12\x38\n\x0f\x61\x63tion_required\x18\x04 \x01(\x0b\x32\x1d.openclaude.v1.ActionRequiredH\x00\x12,\n\x04\x64one\x18\x05 \x01(\x0b\x32\x1c.openclaude.v1.FinalResponseH\x00\x12-\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x1c.openclaude.v1.ErrorResponseH\x00\x42\x07\n\x05\x65vent\"\x19\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\"O\n\rToolCallStart\x12\x11\n\ttool_name\x18\x01 \x01(\t\x12\x16\n\x0e\x61rguments_json\x18\x02 \x01(\t\x12\x13\n\x0btool_use_id\x18\x03 \x01(\t\"Z\n\x0eToolCallResult\x12\x11\n\ttool_name\x18\x01 \x01(\t\x12\x0e\n\x06output\x18\x02 \x01(\t\x12\x10\n\x08is_error\x18\x03 \x01(\x08\x12\x13\n\x0btool_use_id\x18\x04 \x01(\t\"\xa9\x01\n\x0e\x41\x63tionRequired\x12\x11\n\tprompt_id\x18\x01 \x01(\t\x12\x10\n\x08question\x18\x02 \x01(\t\x12\x36\n\x04type\x18\x03 \x01(\x0e\x32(.openclaude.v1.ActionRequired.ActionType\":\n\nActionType\x12\x13\n\x0f\x43ONFIRM_COMMAND\x10\x00\x12\x17\n\x13REQUEST_INFORMATION\x10\x01\"T\n\rFinalResponse\x12\x11\n\tfull_text\x18\x01 \x01(\t\x12\x15\n\rprompt_tokens\x18\x02 \x01(\x05\x12\x19\n\x11\x63ompletion_tokens\x18\x03 \x01(\x05\".\n\rErrorResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0c\n\x04\x63ode\x18\x02 \x01(\t2V\n\x0c\x41gentService\x12\x46\n\x04\x43hat\x12\x1c.openclaude.v1.ClientMessage\x1a\x1c.openclaude.v1.ServerMessage(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,28 +33,28 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_CLIENTMESSAGE']._serialized_start=36
   _globals['_CLIENTMESSAGE']._serialized_end=199
-  _globals['_CHATREQUEST']._serialized_start=201
-  _globals['_CHATREQUEST']._serialized_end=314
-  _globals['_USERINPUT']._serialized_start=316
-  _globals['_USERINPUT']._serialized_end=361
-  _globals['_CANCELSIGNAL']._serialized_start=363
-  _globals['_CANCELSIGNAL']._serialized_end=393
-  _globals['_SERVERMESSAGE']._serialized_start=396
-  _globals['_SERVERMESSAGE']._serialized_end=725
-  _globals['_TEXTCHUNK']._serialized_start=727
-  _globals['_TEXTCHUNK']._serialized_end=752
-  _globals['_TOOLCALLSTART']._serialized_start=754
-  _globals['_TOOLCALLSTART']._serialized_end=833
-  _globals['_TOOLCALLRESULT']._serialized_start=835
-  _globals['_TOOLCALLRESULT']._serialized_end=925
-  _globals['_ACTIONREQUIRED']._serialized_start=928
-  _globals['_ACTIONREQUIRED']._serialized_end=1097
-  _globals['_ACTIONREQUIRED_ACTIONTYPE']._serialized_start=1039
-  _globals['_ACTIONREQUIRED_ACTIONTYPE']._serialized_end=1097
-  _globals['_FINALRESPONSE']._serialized_start=1099
-  _globals['_FINALRESPONSE']._serialized_end=1183
-  _globals['_ERRORRESPONSE']._serialized_start=1185
-  _globals['_ERRORRESPONSE']._serialized_end=1231
-  _globals['_AGENTSERVICE']._serialized_start=1233
-  _globals['_AGENTSERVICE']._serialized_end=1319
+  _globals['_CHATREQUEST']._serialized_start=202
+  _globals['_CHATREQUEST']._serialized_end=343
+  _globals['_USERINPUT']._serialized_start=345
+  _globals['_USERINPUT']._serialized_end=390
+  _globals['_CANCELSIGNAL']._serialized_start=392
+  _globals['_CANCELSIGNAL']._serialized_end=422
+  _globals['_SERVERMESSAGE']._serialized_start=425
+  _globals['_SERVERMESSAGE']._serialized_end=754
+  _globals['_TEXTCHUNK']._serialized_start=756
+  _globals['_TEXTCHUNK']._serialized_end=781
+  _globals['_TOOLCALLSTART']._serialized_start=783
+  _globals['_TOOLCALLSTART']._serialized_end=862
+  _globals['_TOOLCALLRESULT']._serialized_start=864
+  _globals['_TOOLCALLRESULT']._serialized_end=954
+  _globals['_ACTIONREQUIRED']._serialized_start=957
+  _globals['_ACTIONREQUIRED']._serialized_end=1126
+  _globals['_ACTIONREQUIRED_ACTIONTYPE']._serialized_start=1068
+  _globals['_ACTIONREQUIRED_ACTIONTYPE']._serialized_end=1126
+  _globals['_FINALRESPONSE']._serialized_start=1128
+  _globals['_FINALRESPONSE']._serialized_end=1212
+  _globals['_ERRORRESPONSE']._serialized_start=1214
+  _globals['_ERRORRESPONSE']._serialized_end=1260
+  _globals['_AGENTSERVICE']._serialized_start=1262
+  _globals['_AGENTSERVICE']._serialized_end=1348
 # @@protoc_insertion_point(module_scope)

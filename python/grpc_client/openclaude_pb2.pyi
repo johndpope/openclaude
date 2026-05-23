@@ -17,16 +17,18 @@ class ClientMessage(_message.Message):
     def __init__(self, request: _Optional[_Union[ChatRequest, _Mapping]] = ..., input: _Optional[_Union[UserInput, _Mapping]] = ..., cancel: _Optional[_Union[CancelSignal, _Mapping]] = ...) -> None: ...
 
 class ChatRequest(_message.Message):
-    __slots__ = ("message", "working_directory", "model", "session_id")
+    __slots__ = ("message", "working_directory", "model", "session_id", "bypass_permissions")
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
     WORKING_DIRECTORY_FIELD_NUMBER: _ClassVar[int]
     MODEL_FIELD_NUMBER: _ClassVar[int]
     SESSION_ID_FIELD_NUMBER: _ClassVar[int]
+    BYPASS_PERMISSIONS_FIELD_NUMBER: _ClassVar[int]
     message: str
     working_directory: str
     model: str
     session_id: str
-    def __init__(self, message: _Optional[str] = ..., working_directory: _Optional[str] = ..., model: _Optional[str] = ..., session_id: _Optional[str] = ...) -> None: ...
+    bypass_permissions: bool
+    def __init__(self, message: _Optional[str] = ..., working_directory: _Optional[str] = ..., model: _Optional[str] = ..., session_id: _Optional[str] = ..., bypass_permissions: bool = ...) -> None: ...
 
 class UserInput(_message.Message):
     __slots__ = ("reply", "prompt_id")

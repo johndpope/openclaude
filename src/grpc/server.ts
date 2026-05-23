@@ -111,6 +111,13 @@ export class GrpcServer {
                 }
               })
 
+              // Bypass mode: auto-allow every tool without emitting ActionRequired.
+              // Used by headless callers (e.g. the MCP bridge) that run within a
+              // single request/response turn and cannot answer a permission prompt.
+              if (req.bypass_permissions) {
+                return { behavior: 'allow' }
+              }
+
               // Ask user for permission
               const promptId = randomUUID()
               const question = `Approve ${tool.name}?`

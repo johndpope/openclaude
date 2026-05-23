@@ -31,6 +31,9 @@ message ChatRequest {
   reserved 3;                   // Reserved to prevent accidental reuse
   optional string model = 4;
   string session_id = 5;        // Non-empty = cross-stream session persistence
+  bool bypass_permissions = 6;  // Skip per-tool permission prompts; auto-allow every tool.
+                                // For headless/automated callers (e.g. the MCP bridge) that
+                                // cannot answer ActionRequired mid-stream.
 }
 
 message UserInput {
