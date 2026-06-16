@@ -38,7 +38,7 @@ async function main() {
   await validateProviderEnvOrExit()
 
   const port = process.env.GRPC_PORT ? parseInt(process.env.GRPC_PORT, 10) : 50051
-  const host = process.env.GRPC_HOST || 'localhost'
+  const host = process.env.GRPC_HOST || '0.0.0.0'
   const server = new GrpcServer()
 
   server.start(port, host)

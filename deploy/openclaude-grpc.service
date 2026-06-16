@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenClaude gRPC Server
+After=network.target
+
+[Service]
+Type=simple
+User=johndpope
+WorkingDirectory=/media/2TB/GitHub/openclaude
+Environment=GRPC_HOST=0.0.0.0
+Environment=GRPC_PORT=50051
+ExecStart=/home/johndpope/.bun/bin/bun run scripts/start-grpc.ts
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
