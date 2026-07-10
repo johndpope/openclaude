@@ -1,0 +1,19 @@
+[Unit]
+Description=OpenClaude OpenAI-compatible bridge (gRPC -> /v1/chat/completions)
+After=network.target openclaude-grpc.service
+Wants=openclaude-grpc.service
+
+[Service]
+Type=simple
+User=johndpope
+WorkingDirectory=/media/2TB/GitHub/openclaude
+Environment=BRIDGE_HOST=0.0.0.0
+Environment=BRIDGE_PORT=8091
+Environment=GRPC_HOST=127.0.0.1
+Environment=GRPC_PORT=50051
+ExecStart=/home/johndpope/.bun/bin/bun run scripts/openai-bridge.ts
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
