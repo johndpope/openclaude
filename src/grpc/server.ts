@@ -8,6 +8,12 @@ import { getDefaultAppState } from '../state/AppStateStore.js'
 import { AppState } from '../state/AppState.js'
 import { FileStateCache, READ_FILE_STATE_CACHE_SIZE } from '../utils/fileStateCache.js'
 import { getBuiltInAgents } from '../tools/AgentTool/builtInAgents.js'
+import {
+  getActiveProviderProfile,
+  getProviderProfiles,
+  applyProviderProfileToProcessEnv,
+} from '../utils/providerProfiles.js'
+import type { ProviderProfile } from '../utils/config.js'
 
 const PROTO_PATH = path.resolve(import.meta.dirname, '../proto/openclaude.proto')
 
@@ -23,6 +29,59 @@ const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any
 const openclaudeProto = protoDescriptor.openclaude.v1
 
 const MAX_SESSIONS = 1000
+
+// --- Per-request model -> provider routing -------------------------------
+//
+// The process env (OPENAI_BASE_URL / OPENAI_API_KEY / OPENAI_MODEL, etc.) is
+// read fresh at request time by the OpenAI-compatible transport, but it is
+// process-wide state: only one provider profile's env can be "active" at a
+// time. This server normally just forwards req.model into the already-active
+// profile's endpoint (fine when the requested model belongs to that
+// profile — e.g. switching between GLM-5.2/GLM-5-Turbo on the same Z.AI
+// account). To let a single long-running server also answer for a model that
+// lives behind a *different* saved provider profile (e.g. deepseek-v4-flash
+// via the opencode zen custom provider while GLM-5.2 stays the default), we
+// temporarily swap the process env to that profile for the duration of the
+// request, then swap back to the boot-time active profile afterwards.
+//
+// Because this mutates global process.env, concurrent Chat streams are
+// serialized through swapEnvLock so two in-flight requests can never see
+// each other's provider env mid-swap.
+
+let bootProfileResolved = false
+let bootProfile: ProviderProfile | undefined
+
+function getBootProfile(): ProviderProfile | undefined {
+  if (!bootProfileResolved) {
+    bootProfile = getActiveProviderProfile()
+    bootProfileResolved = true
+  }
+  return bootProfile
+}
+
+/** Find a saved provider profile whose `model` list contains the given model id. */
+function findProfileForModel(model: string): ProviderProfile | undefined {
+  const target = model.trim().toLowerCase()
+  if (!target) return undefined
+  return getProviderProfiles().find((profile) =>
+    (profile.model || '')
+      .split(',')
+      .map((m) => m.trim().toLowerCase())
+      .includes(target),
+  )
+}
+
+let swapLockTail: Promise<unknown> = Promise.resolve()
+
+/** Serializes `fn` behind any other pending env-sensitive request. */
+function withEnvLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = swapLockTail.then(fn, fn)
+  swapLockTail = run.then(
+    () => undefined,
+    () => undefined,
+  )
+  return run
+}
 
 export class GrpcServer {
   private server: grpc.Server
@@ -85,6 +144,21 @@ export class GrpcServer {
           }
 
           const toolNameById = new Map<string, string>()
+
+          // Resolve whether req.model requires temporarily routing this
+          // request to a different saved provider profile (see withEnvLock
+          // doc comment above). Falls through to whatever profile is already
+          // active when req.model is empty or belongs to it already.
+          const requestedModel = typeof req.model === 'string' ? req.model.trim() : ''
+          const targetProfile = requestedModel ? findProfileForModel(requestedModel) : undefined
+          const boot = getBootProfile()
+          const needsProviderSwap = !!targetProfile && targetProfile.id !== boot?.id
+
+          await withEnvLock(async () => {
+          try {
+          if (needsProviderSwap && targetProfile) {
+            applyProviderProfileToProcessEnv(targetProfile)
+          }
 
           engine = new QueryEngine({
             cwd: req.working_directory || process.cwd(),
@@ -222,6 +296,15 @@ export class GrpcServer {
           }
 
           engine = null
+          } finally {
+            // Always restore the boot-time active profile's env so the next
+            // request (which may not specify a model at all) keeps hitting
+            // the expected default endpoint.
+            if (needsProviderSwap && boot) {
+              applyProviderProfileToProcessEnv(boot)
+            }
+          }
+          })
 
         } else if (clientMessage.input) {
           const promptId = clientMessage.input.prompt_id

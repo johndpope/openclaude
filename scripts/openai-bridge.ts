@@ -25,6 +25,12 @@ const BRIDGE_PORT = Number(process.env.BRIDGE_PORT || 8091)
 const GRPC_HOST = process.env.GRPC_HOST || 'localhost'
 const GRPC_PORT = process.env.GRPC_PORT || '50051'
 const MODEL_ID = 'openclaude-agent'
+// Models the gRPC server can actually route to (see src/grpc/server.ts
+// findProfileForModel): the agent default (GLM-5.2 via the active Z.AI
+// profile) plus any other saved provider profile's model id — currently
+// deepseek-v4-flash via the opencode zen custom provider.
+const PASSTHROUGH_MODELS = ['GLM-5.2', 'deepseek-v4-flash']
+const KNOWN_MODEL_IDS = [MODEL_ID, ...PASSTHROUGH_MODELS]
 const WORKDIR =
   process.env.OPENCLAUDE_WORKDIR || path.join(os.homedir(), 'openclaude-bridge-workspace')
 mkdirSync(WORKDIR, { recursive: true })
@@ -80,11 +86,27 @@ interface AgentEvents {
   onError: (message: string) => void
 }
 
+/**
+ * Maps the OpenAI "model" field to the gRPC ChatRequest.model.
+ *  - "openclaude-agent" (or empty/unrecognized) -> omit, agent default (GLM-5.2)
+ *  - optional "openclaude:" prefix is stripped
+ *  - anything else is passed through verbatim; the gRPC server resolves it
+ *    against saved provider profiles (see src/grpc/server.ts) and 400s
+ *    upstream if it doesn't recognize it.
+ */
+function resolveGrpcModel(requestedModel: unknown): string | undefined {
+  if (typeof requestedModel !== 'string') return undefined
+  const stripped = requestedModel.trim().replace(/^openclaude:/i, '')
+  if (!stripped || stripped === MODEL_ID) return undefined
+  return stripped
+}
+
 /** One request = one gRPC Chat stream. Returns a cancel function. */
 function runAgent(
   message: string,
   systemPrompt: string,
   sessionId: string,
+  model: string | undefined,
   ev: AgentEvents,
 ): () => void {
   const call = agent.Chat()
@@ -115,6 +137,7 @@ function runAgent(
       working_directory: WORKDIR,
       session_id: sessionId,
       bypass_permissions: true,
+      ...(model ? { model } : {}),
       ...(systemPrompt ? { system_prompt: systemPrompt } : {}),
     },
   })
@@ -128,12 +151,12 @@ function runAgent(
 const completionId = () => `chatcmpl-${crypto.randomUUID().slice(0, 12)}`
 const now = () => Math.floor(Date.now() / 1000)
 
-function completionJson(id: string, text: string) {
+function completionJson(id: string, text: string, model: string) {
   return {
     id,
     object: 'chat.completion',
     created: now(),
-    model: MODEL_ID,
+    model,
     choices: [
       {
         index: 0,
@@ -145,12 +168,12 @@ function completionJson(id: string, text: string) {
   }
 }
 
-function sseChunk(id: string, delta: object, finish: string | null = null) {
+function sseChunk(id: string, model: string, delta: object, finish: string | null = null) {
   return `data: ${JSON.stringify({
     id,
     object: 'chat.completion.chunk',
     created: now(),
-    model: MODEL_ID,
+    model,
     choices: [{ index: 0, delta, finish_reason: finish }],
   })}\n\n`
 }
@@ -169,7 +192,12 @@ Bun.serve({
     if (url.pathname === '/v1/models') {
       return Response.json({
         object: 'list',
-        data: [{ id: MODEL_ID, object: 'model', created: now(), owned_by: 'openclaude' }],
+        data: KNOWN_MODEL_IDS.map((id) => ({
+          id,
+          object: 'model',
+          created: now(),
+          owned_by: 'openclaude',
+        })),
       })
     }
 
@@ -188,22 +216,30 @@ Bun.serve({
       // OpenAI's `user` field doubles as the cross-request agent session id.
       const sessionId = typeof body.user === 'string' ? body.user : ''
       const id = completionId()
+      // What we echo back in responses' "model" field: the id the caller
+      // asked for (falling back to the default agent id), independent of
+      // whether it maps to a gRPC model override.
+      const responseModel =
+        typeof body.model === 'string' && body.model.trim() ? body.model.trim() : MODEL_ID
+      const grpcModel = resolveGrpcModel(body.model)
 
       if (body.stream) {
         let cancel: () => void = () => {}
         const stream = new ReadableStream({
           start(controller) {
             const enc = new TextEncoder()
-            controller.enqueue(enc.encode(sseChunk(id, { role: 'assistant' })))
-            cancel = runAgent(task, system, sessionId, {
-              onText: (t) => controller.enqueue(enc.encode(sseChunk(id, { content: t }))),
+            controller.enqueue(enc.encode(sseChunk(id, responseModel, { role: 'assistant' })))
+            cancel = runAgent(task, system, sessionId, grpcModel, {
+              onText: (t) => controller.enqueue(enc.encode(sseChunk(id, responseModel, { content: t }))),
               onDone: () => {
-                controller.enqueue(enc.encode(sseChunk(id, {}, 'stop')))
+                controller.enqueue(enc.encode(sseChunk(id, responseModel, {}, 'stop')))
                 controller.enqueue(enc.encode('data: [DONE]\n\n'))
                 controller.close()
               },
               onError: (m) => {
-                controller.enqueue(enc.encode(sseChunk(id, { content: `\n[bridge error: ${m}]` }, 'stop')))
+                controller.enqueue(
+                  enc.encode(sseChunk(id, responseModel, { content: `\n[bridge error: ${m}]` }, 'stop')),
+                )
                 controller.enqueue(enc.encode('data: [DONE]\n\n'))
                 controller.close()
               },
@@ -223,7 +259,7 @@ Bun.serve({
       }
 
       const text = await new Promise<string>((resolve, reject) => {
-        runAgent(task, system, sessionId, {
+        runAgent(task, system, sessionId, grpcModel, {
           onText: () => {},
           onDone: resolve,
           onError: (m) => reject(new Error(m)),
@@ -231,7 +267,7 @@ Bun.serve({
       }).catch((e) => {
         throw e
       })
-      return Response.json(completionJson(id, text))
+      return Response.json(completionJson(id, text, responseModel))
     }
 
     return Response.json({ error: { message: 'not found' } }, { status: 404 })
