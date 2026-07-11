@@ -144,6 +144,7 @@ export class GrpcServer {
             readFileCache: fileCache,
             userSpecifiedModel: req.model,
             fallbackModel: req.model,
+            ...(req.system_prompt ? { customSystemPrompt: req.system_prompt } : {}),
           })
 
           // Track accumulated response data for FinalResponse

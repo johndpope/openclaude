@@ -34,6 +34,10 @@ message ChatRequest {
   bool bypass_permissions = 6;  // Skip per-tool permission prompts; auto-allow every tool.
                                 // For headless/automated callers (e.g. the MCP bridge) that
                                 // cannot answer ActionRequired mid-stream.
+  optional string system_prompt = 7; // Replaces the default system prompt entirely
+                                     // (QueryEngine customSystemPrompt). Lets callers
+                                     // repurpose the agent (personas, JSON responders)
+                                     // instead of the built-in engineering identity.
 }
 
 message UserInput {

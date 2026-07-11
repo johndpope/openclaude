@@ -52,12 +52,14 @@ function contentText(c: OpenAIMessage['content']): string {
   return c.map((p) => p.text ?? '').join('')
 }
 
-/** Flatten an OpenAI messages array into one agent task message. */
-function flatten(messages: OpenAIMessage[]): string {
-  const system = messages.filter((m) => m.role === 'system').map((m) => contentText(m.content))
+/** Split an OpenAI messages array into a system prompt + one agent task message. */
+function flatten(messages: OpenAIMessage[]): { system: string; task: string } {
+  const system = messages
+    .filter((m) => m.role === 'system')
+    .map((m) => contentText(m.content))
+    .join('\n\n')
   const turns = messages.filter((m) => m.role !== 'system')
   const parts: string[] = []
-  if (system.length) parts.push(system.join('\n\n'))
   if (turns.length > 1) {
     parts.push(
       'Conversation so far:\n' +
@@ -69,7 +71,7 @@ function flatten(messages: OpenAIMessage[]): string {
   }
   const last = turns[turns.length - 1]
   if (last) parts.push(contentText(last.content))
-  return parts.join('\n\n')
+  return { system, task: parts.join('\n\n') }
 }
 
 interface AgentEvents {
@@ -79,7 +81,12 @@ interface AgentEvents {
 }
 
 /** One request = one gRPC Chat stream. Returns a cancel function. */
-function runAgent(message: string, sessionId: string, ev: AgentEvents): () => void {
+function runAgent(
+  message: string,
+  systemPrompt: string,
+  sessionId: string,
+  ev: AgentEvents,
+): () => void {
   const call = agent.Chat()
   let streamed = ''
 
@@ -108,6 +115,7 @@ function runAgent(message: string, sessionId: string, ev: AgentEvents): () => vo
       working_directory: WORKDIR,
       session_id: sessionId,
       bypass_permissions: true,
+      ...(systemPrompt ? { system_prompt: systemPrompt } : {}),
     },
   })
   return () => {
@@ -176,7 +184,7 @@ Bun.serve({
       if (!messages.length) {
         return Response.json({ error: { message: 'messages required' } }, { status: 400 })
       }
-      const task = flatten(messages)
+      const { system, task } = flatten(messages)
       // OpenAI's `user` field doubles as the cross-request agent session id.
       const sessionId = typeof body.user === 'string' ? body.user : ''
       const id = completionId()
@@ -187,7 +195,7 @@ Bun.serve({
           start(controller) {
             const enc = new TextEncoder()
             controller.enqueue(enc.encode(sseChunk(id, { role: 'assistant' })))
-            cancel = runAgent(task, sessionId, {
+            cancel = runAgent(task, system, sessionId, {
               onText: (t) => controller.enqueue(enc.encode(sseChunk(id, { content: t }))),
               onDone: () => {
                 controller.enqueue(enc.encode(sseChunk(id, {}, 'stop')))
@@ -215,7 +223,7 @@ Bun.serve({
       }
 
       const text = await new Promise<string>((resolve, reject) => {
-        runAgent(task, sessionId, {
+        runAgent(task, system, sessionId, {
           onText: () => {},
           onDone: resolve,
           onError: (m) => reject(new Error(m)),
